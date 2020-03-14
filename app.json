@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "CommandLineCalendar",
+    "slug": "CommandLineCalendar",
+    "privacy": "public",
+    "sdkVersion": "36.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "jp.kyuki3rain.commandlinecalendar"
+    },
+    "android": {
+      "package": "jp.kyuki3rain.commandlinecalendar",
+      "versionCode" : 6,
+      "config":{
+        "googleMobileAdsAppId": "ca-app-pub-8493044522329514~2617654120"
+      },
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#ffffff"
+    }
+  }
+}
