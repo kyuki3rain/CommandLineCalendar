@@ -9,7 +9,7 @@
       "android",
       "web"
     ],
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -29,7 +29,7 @@
     },
     "android": {
       "package": "jp.kyuki3rain.commandlinecalendar",
-      "versionCode" : 6,
+      "versionCode" : 2,
       "config":{
         "googleMobileAdsAppId": "ca-app-pub-8493044522329514~2617654120"
       },

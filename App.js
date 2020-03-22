@@ -10,10 +10,12 @@ import { PersistGate } from 'redux-persist/integration/react';
 import sagas from "./sagas";
 import reducer from "./reducer";
 
+const composeEnhancer = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
 const sagaMiddleware = createSagaMiddleware();
 const persistConfig = {key: 'root',storage:AsyncStorage,}
 const persistedReducer = persistReducer(persistConfig, reducer);
-const store = createStore(persistedReducer ,compose(applyMiddleware(sagaMiddleware),process.env.NODE_ENV === 'development' && window.devToolsExtension ? window.devToolsExtension() : f => f));
+const store = createStore(persistedReducer ,composeEnhancer(applyMiddleware(sagaMiddleware)));
 sagaMiddleware.run(sagas);
 let persistor = persistStore(store);
 

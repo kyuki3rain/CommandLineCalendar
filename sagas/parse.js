@@ -1,17 +1,26 @@
 import {take,put,select,takeEvery,call} from "redux-saga/effects";
 import {ActionType} from "../actions";
 import { Notifications } from 'expo';
+import { AccessibilityInfo } from "react-native";
 
 export function* parseRoot(){
-    yield call(resetNotif);
-    const data = yield select(state => state.main.data);
-    for(let i=0;i<data.length;i++){
-        yield call(scheduleNotification,data[i]);
-    }
+    // yield call(resetNotif);
+    // const data = yield select(state => state.main.data);
+    // yield put({type:ActionType.RESET_SCHEDULE});
+    // for(let i=0;i<data.length;i++){
+    //     try{
+    //         yield put({type:ActionType.PUSH_DATA,payload:data[i]});
+    //         yield call(scheduleNotification,data[i],i);
+    //     }
+    //     catch(err){
+    //         yield put({type:ActionType.DEL_DATA,payload:i});
+    //     }
+    // }
     yield takeEvery(ActionType.PUSH_TEXT,parse);
 }
 
 async function resetNotif(){
+    await Notifications.dismissAllNotificationsAsync();
     await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
@@ -19,9 +28,8 @@ function* parse(action){
     const text = action.payload;
     const cmd = text.split(/\s|\n/);
     const step = yield select(state => state.view.step);
-    const skedule = [];
+    let dataOrder = yield select(state => state.main.data.length - 1);
     let data = [];
-    // console.log(cmd);
     try{
         switch(cmd[0]){
             case "add":
@@ -30,7 +38,8 @@ function* parse(action){
                         let i=2;
                         while(cmd[i]!=="end"){
                             data.push(parseSkedule(cmd.slice(i,i+5)));
-                            yield call(scheduleNotification,parseSkedule(cmd.slice(i,i+5)));
+                            dataOrder++;
+                            yield call(scheduleNotification,parseSkedule(cmd.slice(i,i+5)),dataOrder);
                             // yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:id,data:parseSkedule(cmd.slice(i,i+5))}})
                             i+=5;
                         }
@@ -38,7 +47,8 @@ function* parse(action){
                         
                     default:
                         data.push(parseSkedule(cmd.slice(1,6)));
-                        yield call(scheduleNotification,parseSkedule(cmd.slice(1,6)));
+                        dataOrder++;
+                        yield call(scheduleNotification,parseSkedule(cmd.slice(1,6)),dataOrder);
                         // yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:id,data:parseSkedule(cmd.slice(i,i+5))}})
                         break;
                 }
@@ -53,13 +63,11 @@ function* parse(action){
                 switch(cmd[1]){
                     case "all":
                         yield put({type:ActionType.PULL_DATA,payload:message(dataTexts.join("\n"),step)});
-                        console.log(dataTexts.join("\n"));
                         break;
                     
                     case "latest":
                         const dataText = dataTexts[dataTexts.length-1];
                         yield put({type:ActionType.PULL_DATA,payload:message(dataText,step)});
-                        console.log(dataText);
                         break;
                     
                     case "archive":
@@ -73,18 +81,26 @@ function* parse(action){
                 break;
     
             case "delete":
-                switch(cmd[1]){
-                    case "all":
-                        yield put({type:ActionType.DEL_DATA})
-                        yield call(resetNotif);
-                        break;
-                    case "latest":
-                        yield put({type:ActionType.POP_DATA})
-                        break;
-
-                    default:throw "delete is error";
+                if(!isNaN(cmd[1])){
+                    yield put({type:ActionType.DEL_DATA,payload:cmd[1]})
+                    const datatoid = select(state => state.main.datatoid);
+                    const id = datatoid[cmd[1]];
+                    yield call(Notifications.cancelScheduledNotificationAsync,id);
+                    break;
                 }
-                break;
+                else{
+                    switch(cmd[1]){
+                        case "all":
+                            
+                        case "latest":
+                            yield put({type:ActionType.DEL_DATA,payload:dataOrder})
+                            break;
+    
+                        default:
+                            throw "DEL Error";
+                    }
+                    break;
+                }
             
             case "reset":
                 switch(cmd[1]){
@@ -96,14 +112,12 @@ function* parse(action){
                     case "view":
                         yield put({type:ActionType.RESET_VIEW});
                         break;
-
-                    case "all":
+                        
+                    default:
                         yield put({type:ActionType.RESET_MAIN});
                         yield call(resetNotif);
                         yield put({type:ActionType.RESET_VIEW});
                         break;
-
-                    default:throw "reset is error";
                 }
                 break;
 
@@ -113,7 +127,8 @@ function* parse(action){
                         let i=1;
                         while(cmd[i]!=="end"){
                             data.push(parseSkedule(cmd.slice(i,i+5)));
-                            yield call(scheduleNotification,parseSkedule(cmd.slice(i,i+5)));
+                            dataOrder++;
+                            yield call(scheduleNotification,parseSkedule(cmd.slice(i,i+5)),dataOrder);
                             // yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:id,data:parseSkedule(cmd.slice(i,i+5))}})
                             i+=5;
                         }
@@ -121,7 +136,8 @@ function* parse(action){
                         
                     default:
                         data.push(parseSkedule(cmd.slice(0,5)));
-                        yield call(scheduleNotification,parseSkedule(cmd.slice(0,5)));
+                        dataOrder++;
+                        yield call(scheduleNotification,parseSkedule(cmd.slice(0,5)),dataOrder);
                         // yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:id,data:parseSkedule(cmd.slice(i,i+5))}})
                         break;
                 }
@@ -130,8 +146,7 @@ function* parse(action){
                 break;
         }
     }catch(err){
-        console.log(err);
-        yield put({type:ActionType.PULL_DATA,payload:message("Error:input text is a wrong format!",step)});
+        yield put({type:ActionType.PULL_DATA,payload:message("Error:input text is a wrong format! Because of "+err,step)});
     }
     
 }
@@ -161,7 +176,7 @@ const parseSkedule = (skedule) => {
             minute:0,
         },
         plan:{
-            title:"",
+            title:"a",
             content:"",
         },
         tag:[],
@@ -225,41 +240,36 @@ const parseSkedule = (skedule) => {
     return res;
 }
 
-function* scheduleNotification(data){
+function* scheduleNotification(data,order){
     const date = new Date(data.date.year,data.date.month-1,data.date.day,data.date.hour,data.date.minute);
     const moning = new Date(data.date.year,data.date.month,data.date.day,7,0);
-    console.log(date);
     if(moning.getTime>new Date().getTime()){
         let notificationId_moning = yield call(notificationAdd,"今日は"+data.plan.title+"があります。",data.plan.content,moning.getTime());
-        yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:notificationId_moning,data}});
-        console.log(notificationId_moning);
+        yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:notificationId_moning,data,order:-1}});
     }
     if(date.getTime()-1800000>new Date().getTime()){
         let notificationId_before = yield call(notificationAdd,data.plan.title+"の30分前です。",data.plan.content,date.getTime() - 1800000);
-        yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:notificationId_before,data}});
-        console.log(notificationId_before);
+        yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:notificationId_before,data,order:-1}});
     }
     if(date.getTime()>new Date().getTime()){
         let notificationId = yield call(notificationAdd,data.plan.title,data.plan.content,date.getTime());
-        yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:notificationId,data}});
-        console.log(notificationId);
+        yield put({type:ActionType.PUSH_SCHEDULE,payload:{id:notificationId,data,order}});
+    }
+    else{
+        throw "past time";
     }
   };
 
   async function notificationAdd(title,body,time){
-      console.log("add notification ", title , body , time);
     let notificationId = await Notifications.scheduleLocalNotificationAsync(
         {
           title,
           body,
-          actionId:"schedule",
           ios:{
             sound:true
           },
           android:{
-                channelId:'schedule',
-                sound:true,
-                vibrate:true,
+                "channelId":"schedule"
           }
         },
         {
